@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 // https://adventofcode.com/2023/day/1
 
@@ -63,33 +64,124 @@ void task_1(void) {
   // 52974
 }
 
-typedef struct TrieNode_ {
-  struct TrieNode_ children[255];
 
-} TrieNode;
+#define N 33 // one two three four five six seven eight nine
+#define A 14 // a..z
 
-void task_2(void) {
+char* alphabet = "efghinorstuvwx";
+char* words[9] = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
+
+int trie[N][A];
+int ch2pos[255];
+
+void build_trie() {
   // https://en.wikipedia.org/wiki/Trie
   // https://en.wikipedia.org/wiki/Radix_tree
 
-  // Build a Prefix Tree
-  // one two three four five six seven eight nine
+  for (int i = 0; i < 255; i++) {
+    ch2pos[i] = -1;
+  }
+  int pos = 0;
+  for (char* ch = alphabet; *ch != '\0'; ch++) {
+    ch2pos[(int)*ch] = pos++;
+  }
 
-  // [o t   f   s   e n]
-  // [n w h o i i e i i]
-  // [e o r u v x v g n]
-  // [    e r e   e h e]
-  // [    e       n t  ]
+  int i = 0;
+  for (int iw = 0; iw < 9; iw++) {
+    int s = 0;
+    for (char* ch = words[iw]; *ch != '\0'; ch++) {
+      int term_ch = (*(ch+1) == '\0');
+      int pos = ch2pos[(int)*ch];
+      int t = trie[s][pos];
+      if (t == 0) {
+        if (term_ch == 1) {
+          // negative means last node. And it encodes the value
+          // Example: one -> o n e -> e -> -1
+          trie[s][pos] = -(iw+1);
+        } else {
+          trie[s][pos] = ++i;
+          s = i;
+        }
+      } else {
+        s = t;
+      }
+    }
+  }
 
-  // [o t t f f s s e n]
-  // [n w h o i i e i i]
-  // [e o r u v x v g n]
-  // [    e r e   e h e]
-  // [    e       n t  ]
+  // for (int i = 0; i < N; i++) {
+  //   for (int j = 0; j < A; j++) {
+  //     printf("%2d ", trie[i][j]);
+  //   }
+  //   printf("\n");
+  // }
+}
+
+int find(char* line) {
+  int s = 0;
+  for (size_t i = 0; i < strlen(line); i++) {
+    char ch = line[i];
+
+    if (ch >= '0' && ch <= '9') { // handle digits
+      return ch - '0';
+    }
+
+    int pos = ch2pos[(int)ch];
+    if (pos < 0) {
+      return 0;
+    }
+
+    s = trie[s][pos];
+    if (s == 0) {
+      return 0;
+    }
+
+    if (s < 0) {
+      return -s;
+    }
+  }
+
+  return 0;
+}
+
+int calc_line(char* line) {
+  int first = -1;
+  int last = 0;
+  for (size_t i = 0; i < strlen(line); i++) {
+    int num = find(line + i);
+
+    if (num > 0) {
+      if (first < 0) {
+        first = num;
+        last = first;
+      } else {
+        last = num;
+      }
+    }
+  }
+  
+  int res = 10 * first + last;
+  printf("%s %d\n", line, res);
+
+  return res;
+}
+
+
+void task_2(void) {
+  char line[50]; // max line length is 50
+  build_trie();
+
+  int res = 0;
+  while(scanf("%s", line) > 0) {
+    res += calc_line(line);
+  }
+
+  printf("Result = %d\n", res);
+  // 53340
 }
 
 int main(void) {
   // task_1();
+  task_2();
 
   return 0;
 }
